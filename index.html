@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -133,30 +134,28 @@
             color: rgba(255, 255, 255, 0.9);
         }
 
-        .custom-time-section input {
-            width: 60px;
-            padding: 10px;
+        .custom-time-section input[type="time"] {
+            padding: 10px 12px;
             font-size: 16px;
             font-weight: 600;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
             color: white;
-            text-align: center;
             font-variant-numeric: tabular-nums;
             -webkit-appearance: none;
+            color-scheme: dark;
         }
 
-        .custom-time-section input:focus {
+        .custom-time-section input[type="time"]:focus {
             outline: none;
             border-color: #00ff88;
             background: rgba(255, 255, 255, 0.15);
         }
 
-        .custom-time-section span {
-            font-size: 24px;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.6);
+        .custom-time-section input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
         }
 
         .btn-set {
@@ -300,9 +299,7 @@
             
             <div class="custom-time-section">
                 <label for="customTime">Start at:</label>
-                <input type="number" id="customMinutes" min="0" max="59" value="5" placeholder="Min">
-                <span>:</span>
-                <input type="number" id="customSeconds" min="0" max="59" value="00" placeholder="Sec">
+                <input type="time" id="customTime" step="1" value="00:05:00">
                 <button class="btn-set" id="setTimeBtn">Set</button>
             </div>
         </div>
@@ -320,8 +317,7 @@
         const startBtn = document.getElementById('startBtn');
         const resetBtn = document.getElementById('resetBtn');
         const setTimeBtn = document.getElementById('setTimeBtn');
-        const customMinutes = document.getElementById('customMinutes');
-        const customSeconds = document.getElementById('customSeconds');
+        const customTime = document.getElementById('customTime');
         const container = document.querySelector('.container');
         const progressCircle = document.getElementById('progressCircle');
         
@@ -493,11 +489,17 @@
         }
 
         function setCustomTime() {
-            const mins = parseInt(customMinutes.value) || 0;
-            const secs = parseInt(customSeconds.value) || 0;
-            const totalSeconds = (mins * 60) + secs;
+            const timeValue = customTime.value;
+            if (!timeValue) return;
             
-            if (totalSeconds > 0 && totalSeconds <= 3599) { // Max 59:59
+            const parts = timeValue.split(':');
+            const hours = parseInt(parts[0]) || 0;
+            const mins = parseInt(parts[1]) || 0;
+            const secs = parseInt(parts[2]) || 0;
+            
+            const totalSeconds = (hours * 3600) + (mins * 60) + secs;
+            
+            if (totalSeconds > 0) {
                 const wasRunning = isRunning;
                 stop();
                 timeRemaining = totalSeconds;
@@ -526,20 +528,6 @@
             e.preventDefault();
             initializeSpeech();
             setCustomTime();
-        });
-        
-        // Allow Enter key to set custom time
-        customMinutes.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                setCustomTime();
-            }
-        });
-        customSeconds.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                setCustomTime();
-            }
         });
 
         document.querySelectorAll('[data-time]').forEach(button => {
