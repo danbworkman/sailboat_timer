@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Sailboat Race Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #000000;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+            overflow: hidden;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .timer-display {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .progress-ring-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin-bottom: 30px;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 12;
+        }
+
+        .progress-ring-circle {
+            fill: none;
+            stroke: #00ff88;
+            stroke-width: 12;
+            stroke-linecap: butt;
+            transition: stroke 0.3s ease, stroke-dashoffset 0.3s ease;
+        }
+
+        .progress-ring-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .time {
+            font-size: 72px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .status {
+            font-size: 20px;
+            font-weight: 500;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 20px;
+        }
+
+        .custom-time-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .custom-time-section label {
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .custom-time-section input[type="time"] {
+            padding: 10px 12px;
+            font-size: 16px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-variant-numeric: tabular-nums;
+            -webkit-appearance: none;
+            color-scheme: dark;
+        }
+
+        .custom-time-section input[type="time"]:focus {
+            outline: none;
+            border-color: #00ff88;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .custom-time-section input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .btn-set {
+            background: #00ff88;
+            color: #000000;
+            padding: 10px 20px;
+            margin-left: auto;
+        }
+
+        .btn-set:active {
+            background: #00cc66;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-appearance: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .btn-start {
+            background: #00ff88;
+            color: #000000;
+        }
+
+        .btn-start:active {
+            background: #00cc66;
+        }
+
+        .btn-reset {
+            background: #ff453a;
+            color: white;
+        }
+
+        .btn-reset:active {
+            background: #cc3830;
+        }
+
+        .btn-jump {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-jump:active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .jump-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .btn-jump-small {
+            padding: 12px 8px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 400px) {
+            .progress-ring-container {
+                width: 240px;
+                height: 240px;
+            }
+            
+            .time {
+                font-size: 60px;
+            }
+            
+            button {
+                font-size: 16px;
+                padding: 15px;
+            }
+        }
+
+        @media (min-height: 800px) {
+            .progress-ring-container {
+                width: 320px;
+                height: 320px;
+            }
+            
+            .time {
+                font-size: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⛵ Race Start Timer</h1>
+            <p>Standard 5-Minute Countdown</p>
+        </div>
+
+        <div class="timer-display">
+            <div class="progress-ring-container">
+                <svg class="progress-ring" viewBox="0 0 120 120">
+                    <circle class="progress-ring-bg" cx="60" cy="60" r="54" stroke-linecap="butt"></circle>
+                    <circle class="progress-ring-circle" id="progressCircle" cx="60" cy="60" r="54" stroke-linecap="butt"></circle>
+                </svg>
+                <div class="progress-ring-center">
+                    <div class="time" id="timeDisplay">5:00</div>
+                    <div class="status" id="status">Ready</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="jump-buttons">
+                <button class="btn-jump btn-jump-small" data-time="300">5:00</button>
+                <button class="btn-jump btn-jump-small" data-time="240">4:00</button>
+                <button class="btn-jump btn-jump-small" data-time="180">3:00</button>
+                <button class="btn-jump btn-jump-small" data-time="120">2:00</button>
+                <button class="btn-jump btn-jump-small" data-time="60">1:00</button>
+            </div>
+            
+            <div class="button-row">
+                <button class="btn-start" id="startBtn">Start</button>
+                <button class="btn-reset" id="resetBtn">Reset</button>
+            </div>
+            
+            <div class="custom-time-section">
+                <label for="customTime">Start at:</label>
+                <input type="time" id="customTime" step="1" value="00:05:00">
+                <button class="btn-set" id="setTimeBtn">Set</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timeRemaining = 300; // 5 minutes in seconds
+        let intervalId = null;
+        let isRunning = false;
+        let lastAnnouncement = null;
+        let speechInitialized = false;
+        let countdownMode = 'race'; // 'race' or 'prestart'
+        let targetStartTime = null; // Target time when 5-min countdown should start
+
+        const timeDisplay = document.getElementById('timeDisplay');
+        const status = document.getElementById('status');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const setTimeBtn = document.getElementById('setTimeBtn');
+        const customTime = document.getElementById('customTime');
+        const container = document.querySelector('.container');
+        const progressCircle = document.getElementById('progressCircle');
+        
+        // Calculate circle properties
+        const radius = 54;
+        const circumference = 2 * Math.PI * radius;
+        progressCircle.style.strokeDasharray = circumference;
+        progressCircle.style.strokeDashoffset = circumference; // Start empty
+
+        // Initialize speech synthesis on iOS
+        function initializeSpeech() {
+            if (!speechInitialized) {
+                const utterance = new SpeechSynthesisUtterance('');
+                utterance.volume = 0;
+                window.speechSynthesis.speak(utterance);
+                speechInitialized = true;
+            }
+        }
+
+        // Speech synthesis
+        function speak(text) {
+            initializeSpeech();
+            
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function formatTime(seconds) {
+            const absSeconds = Math.abs(seconds);
+            const hours = Math.floor(absSeconds / 3600);
+            const mins = Math.floor((absSeconds % 3600) / 60);
+            const secs = absSeconds % 60;
+            const sign = seconds < 0 ? '-' : '';
+            
+            if (hours > 0) {
+                return `${sign}${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            } else {
+                return `${sign}${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function updateDisplay() {
+            timeDisplay.textContent = formatTime(timeRemaining);
+            
+            if (countdownMode === 'prestart') {
+                // Before race countdown starts - no progress ring
+                progressCircle.style.strokeDashoffset = circumference;
+                progressCircle.style.stroke = '#00ff88';
+                status.textContent = 'Time to Start';
+            } else {
+                // During race countdown - show progress
+                const progress = Math.max(0, (300 - timeRemaining) / 300);
+                const offset = circumference * (1 - progress);
+                progressCircle.style.strokeDashoffset = offset;
+                
+                // Update gauge color based on time (background stays black)
+                let ringColor = '#00ff88'; // Bright green
+                
+                if (timeRemaining <= 0) {
+                    status.textContent = 'GO! GO! GO!';
+                    ringColor = '#ff453a'; // Bright red
+                } else if (timeRemaining <= 60) { // 1 minute and below - RED
+                    status.textContent = timeRemaining <= 10 ? 'Final Countdown' : 'One Minute Warning';
+                    ringColor = '#ff453a'; // Bright red
+                } else if (timeRemaining <= 240) { // 4 minutes and below - ORANGE
+                    status.textContent = 'Counting Down';
+                    ringColor = '#ffb340'; // Bright orange
+                } else {
+                    status.textContent = isRunning ? 'Counting Down' : 'Ready';
+                    ringColor = '#00ff88'; // Bright green
+                }
+                
+                progressCircle.style.stroke = ringColor;
+            }
+        }
+
+        function checkAnnouncements() {
+            if (countdownMode === 'prestart') {
+                // No announcements during prestart countdown
+                return;
+            }
+            
+            const key = `${timeRemaining}`;
+            
+            // Prevent duplicate announcements
+            if (key === lastAnnouncement) {
+                return;
+            }
+            
+            lastAnnouncement = key;
+            
+            // 5, 4, 3, 2, and 1 minute marks
+            if (timeRemaining === 300) {
+                speak('5 minutes');
+            } else if (timeRemaining === 240) {
+                speak('4 minutes');
+            } else if (timeRemaining === 180) {
+                speak('3 minutes');
+            } else if (timeRemaining === 120) {
+                speak('2 minutes');
+            } else if (timeRemaining === 60) {
+                speak('1 minute');
+            } 
+            // 30 and 15 second marks
+            else if (timeRemaining === 30) {
+                speak('30 seconds');
+            } else if (timeRemaining === 15) {
+                speak('15 seconds');
+            }
+            // Every second from 10 to 1
+            else if (timeRemaining <= 10 && timeRemaining > 0) {
+                speak(timeRemaining.toString());
+            }
+            // Start signal
+            else if (timeRemaining === 0) {
+                speak('Start!');
+            }
+        }
+
+        function tick() {
+            timeRemaining--;
+            
+            // Check if we've reached the race start time
+            if (countdownMode === 'prestart' && timeRemaining <= 0) {
+                countdownMode = 'race';
+                timeRemaining = 300; // Start 5-minute countdown
+                lastAnnouncement = null;
+                speak('5 minutes');
+            }
+            
+            updateDisplay();
+            checkAnnouncements();
+            
+            if (countdownMode === 'race' && timeRemaining < -10) {
+                stop();
+            }
+        }
+
+        function start() {
+            if (!isRunning) {
+                isRunning = true;
+                startBtn.disabled = true;
+                startBtn.style.opacity = '0.5';
+                lastAnnouncement = null;
+                
+                // Announce current time when starting
+                if (countdownMode === 'race') {
+                    if (timeRemaining === 300) {
+                        speak('5 minutes');
+                    } else if (timeRemaining > 0) {
+                        const mins = Math.floor(timeRemaining / 60);
+                        const secs = timeRemaining % 60;
+                        if (secs === 0 && mins > 0) {
+                            speak(`${mins} minute${mins > 1 ? 's' : ''}`);
+                        } else if (timeRemaining < 60) {
+                            speak(`${timeRemaining} seconds`);
+                        }
+                    }
+                }
+                
+                intervalId = setInterval(tick, 1000);
+                updateDisplay();
+            }
+        }
+
+        function stop() {
+            isRunning = false;
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            clearInterval(intervalId);
+            updateDisplay();
+        }
+
+        function reset() {
+            stop();
+            timeRemaining = 300;
+            countdownMode = 'race';
+            targetStartTime = null;
+            lastAnnouncement = null;
+            updateDisplay();
+            window.speechSynthesis.cancel();
+        }
+
+        function jumpToTime(seconds) {
+            const wasRunning = isRunning;
+            stop();
+            timeRemaining = seconds;
+            countdownMode = 'race';
+            targetStartTime = null;
+            lastAnnouncement = null;
+            updateDisplay();
+            
+            if (wasRunning) {
+                start();
+            }
+        }
+
+        function setCustomTime() {
+            const timeValue = customTime.value;
+            if (!timeValue) return;
+            
+            const parts = timeValue.split(':');
+            const hours = parseInt(parts[0]) || 0;
+            const mins = parseInt(parts[1]) || 0;
+            const secs = parseInt(parts[2]) || 0;
+            
+            // Create target time for today
+            const now = new Date();
+            const target = new Date();
+            target.setHours(hours, mins, secs, 0);
+            
+            // If target time is in the past, assume it's for tomorrow
+            if (target <= now) {
+                target.setDate(target.getDate() + 1);
+            }
+            
+            // Calculate seconds until target time
+            const secondsUntilStart = Math.floor((target - now) / 1000);
+            
+            stop();
+            
+            if (secondsUntilStart > 0) {
+                // Set prestart countdown mode
+                countdownMode = 'prestart';
+                timeRemaining = secondsUntilStart;
+                targetStartTime = target;
+            } else {
+                // If somehow we're at exactly the target time, start race countdown
+                countdownMode = 'race';
+                timeRemaining = 300;
+            }
+            
+            lastAnnouncement = null;
+            updateDisplay();
+            
+            // Automatically start the countdown
+            start();
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            initializeSpeech();
+            start();
+        });
+        
+        resetBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            reset();
+        });
+        
+        setTimeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            initializeSpeech();
+            setCustomTime();
+        });
+
+        document.querySelectorAll('[data-time]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                initializeSpeech();
+                const time = parseInt(e.target.getAttribute('data-time'));
+                jumpToTime(time);
+            });
+        });
+        
+        // Initialize speech on any first touch for iOS
+        document.body.addEventListener('touchstart', initializeSpeech, { once: true });
+
+        // Prevent screen sleep on iOS
+        let noSleep = null;
+        document.addEventListener('click', () => {
+            if (!noSleep) {
+                const video = document.createElement('video');
+                video.setAttribute('playsinline', '');
+                video.setAttribute('muted', '');
+                video.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAAhtZGF0AAAA1m1vb3YAAABsbXZoZAAAAAAAAAAAAAAAAAAAA+gAAAAAAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAABidWR0YQAAAFptZXRhAAAAAAAAACFoZGxyAAAAAAAAAABtZGlyYXBwbAAAAAAAAAAAAAAAAC1pbHN0AAAAJal0b28AAAAdZGF0YQAAAAEAAAAATGF2ZjU4Ljc2LjEwMA==';
+                video.load();
+                noSleep = video;
+            }
+        }, { once: true });
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
