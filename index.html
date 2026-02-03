@@ -312,7 +312,7 @@
             </div>
             
             <div class="custom-time-section">
-                <label>Start at:</label>
+                <label>Race Start:</label>
                 <div class="time-picker-row">
                     <select id="selectHours"></select>
                     <span class="time-picker-colon">:</span>
@@ -578,28 +578,34 @@
             const mins  = parseInt(selectMinutes.value) || 0;
             const secs  = parseInt(selectSeconds.value) || 0;
             
-            // Create target time for today
+            // Target is the actual race start time entered by the user
             const now = new Date();
-            const target = new Date();
-            target.setHours(hours, mins, secs, 0);
+            const raceStart = new Date();
+            raceStart.setHours(hours, mins, secs, 0);
             
-            // If target time is in the past, assume it's for tomorrow
-            if (target <= now) {
-                target.setDate(target.getDate() + 1);
+            // If race start time is in the past, assume it's for tomorrow
+            if (raceStart <= now) {
+                raceStart.setDate(raceStart.getDate() + 1);
             }
             
-            // Calculate seconds until target time
-            const secondsUntilStart = Math.floor((target - now) / 1000);
+            // The 5-minute countdown should begin 5 minutes before race start
+            const countdownStart = new Date(raceStart.getTime() - 300000); // subtract 5 min
+            
+            // Calculate seconds from now until the countdown should begin
+            const secondsUntilCountdown = Math.floor((countdownStart - now) / 1000);
             
             stop();
             
-            if (secondsUntilStart > 0) {
+            if (secondsUntilCountdown > 0) {
+                // We haven't reached the 5-min countdown start yet — wait in prestart mode
                 countdownMode = 'prestart';
-                timeRemaining = secondsUntilStart;
-                targetStartTime = target;
-            } else {
+                timeRemaining = secondsUntilCountdown;
+                targetStartTime = countdownStart;
+            } else if (secondsUntilCountdown <= 0) {
+                // We're already within (or past) the 5-minute window — jump into race countdown
+                const secondsUntilRace = Math.floor((raceStart - now) / 1000);
                 countdownMode = 'race';
-                timeRemaining = 300;
+                timeRemaining = Math.max(0, secondsUntilRace);
             }
             
             lastAnnouncement = null;
